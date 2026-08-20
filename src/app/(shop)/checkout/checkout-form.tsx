@@ -6,8 +6,12 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { useCartStore, cartSubtotal } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
-import { FREE_SHIPPING_THRESHOLD, FLAT_SHIPPING_COST } from "@/lib/constants";
+import { FREE_SHIPPING_THRESHOLD, FLAT_SHIPPING_COST, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import { createOrder } from "@/server/actions/orders";
+import type { z } from "zod";
+import type { paymentMethodSchema } from "@/lib/validations/order";
+
+type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +41,7 @@ export function CheckoutForm({ addresses }: { addresses: Address[] }) {
     phone: "",
   });
   const [saveAddress, setSaveAddress] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("EFECTIVO");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +70,7 @@ export function CheckoutForm({ addresses }: { addresses: Address[] }) {
     setLoading(true);
     const result = await createOrder({
       items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+      paymentMethod,
       addressId: usingNew ? undefined : selectedAddressId,
       newAddress: usingNew ? newAddress : undefined,
       saveAddress: usingNew ? saveAddress : undefined,
@@ -78,9 +84,7 @@ export function CheckoutForm({ addresses }: { addresses: Address[] }) {
     }
 
     clear();
-    if (result.mock) {
-      toast.success("Pago confirmado (modo sandbox de Mercado Pago).");
-    }
+    toast.success("¡Pedido confirmado!");
     window.location.href = result.redirectUrl;
   }
 
@@ -195,12 +199,29 @@ export function CheckoutForm({ addresses }: { addresses: Address[] }) {
 
         <section className="space-y-4">
           <h2 className="font-display text-lg uppercase text-foreground">Método de pago</h2>
-          <div className="border border-accent/40 bg-card p-4 text-sm text-foreground">
-            Mercado Pago (Checkout Pro)
-            <p className="mt-1 text-xs text-muted-foreground">
-              Serás redirigido a Mercado Pago para completar el pago de forma segura.
-            </p>
+          <div className="space-y-3">
+            {(["EFECTIVO", "TRANSFERENCIA"] as const).map((method) => (
+              <label
+                key={method}
+                className={`flex cursor-pointer items-start gap-3 border p-4 transition-colors ${
+                  paymentMethod === method ? "border-accent" : "border-border"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  className="mt-1"
+                  checked={paymentMethod === method}
+                  onChange={() => setPaymentMethod(method)}
+                />
+                <span className="text-sm text-foreground">{PAYMENT_METHOD_LABEL[method]}</span>
+              </label>
+            ))}
           </div>
+          <p className="text-xs text-muted-foreground">
+            Coordinamos el pago por fuera de la web una vez confirmado el pedido (te contactamos con los
+            datos para transferencia, o coordinamos el pago en efectivo).
+          </p>
         </section>
       </div>
 
@@ -245,7 +266,7 @@ export function CheckoutForm({ addresses }: { addresses: Address[] }) {
         )}
 
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
-          {loading ? "Procesando..." : "Pagar con Mercado Pago"}
+          {loading ? "Procesando..." : "Confirmar pedido"}
         </Button>
       </div>
     </form>

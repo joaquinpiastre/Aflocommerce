@@ -3,8 +3,8 @@
 Ecommerce completo para **Aflo**, marca de indumentaria y accesorios streetwear
 (remeras, buzos, camperas, joggers, gorras, musculosas, termos, vasos y mates).
 
-Construido con Next.js 14+ (App Router), TypeScript, Tailwind CSS + shadcn/ui,
-Prisma + PostgreSQL, Auth.js y Mercado Pago.
+Construido con Next.js 14+ (App Router), TypeScript, Tailwind CSS + shadcn/ui
+y Prisma + PostgreSQL.
 
 ## Stack
 
@@ -12,7 +12,7 @@ Prisma + PostgreSQL, Auth.js y Mercado Pago.
 - **Estilos:** Tailwind CSS v4 + shadcn/ui, tema oscuro Aflo (negro / rojo / dorado)
 - **Base de datos:** PostgreSQL + Prisma ORM
 - **Auth:** Auth.js (NextAuth v5) — credenciales (email/contraseña) + Google OAuth
-- **Pagos:** Mercado Pago (Checkout Pro), con modo mock si no hay credenciales
+- **Pagos:** manuales (efectivo o transferencia) — la orden queda "Pendiente" y un admin la marca como "Pagado" desde el panel una vez confirmado el pago por fuera de la web
 - **Imágenes:** UploadThing
 - **Validación:** Zod + React Hook Form
 - **Gráficos admin:** Recharts
@@ -94,8 +94,6 @@ Ver [`.env.example`](./.env.example) para el listado completo y comentado. Resum
 | `AUTH_SECRET`                          | Sí        | Secreto de Auth.js (`npx auth secret`)                                  |
 | `NEXTAUTH_URL` / `NEXT_PUBLIC_SITE_URL`| Sí        | URL pública del sitio                                                  |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`| No        | Credenciales OAuth de Google. Si faltan, se oculta el login con Google |
-| `MERCADOPAGO_ACCESS_TOKEN`             | No        | Token privado de Mercado Pago. Si falta, el checkout usa modo mock      |
-| `NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY`   | No        | Public key de Mercado Pago (Checkout Pro)                               |
 | `UPLOADTHING_TOKEN`                    | No        | Token de UploadThing para subir imágenes de productos desde el admin    |
 | `RESEND_API_KEY` / `EMAIL_FROM`        | No        | Envío de emails transaccionales (confirmación de orden)                 |
 
@@ -129,7 +127,7 @@ Preparado para [Vercel](https://vercel.com). Estado actual del deploy:
 - **Producción:** https://aflo-ecommerce.vercel.app
 - **Base de datos:** PostgreSQL en [Railway](https://railway.app) (proyecto `aflo-ecommerce`), con proxy TCP público para que Vercel se conecte. `DATABASE_URL` ya está cargada como variable de entorno en Vercel (Production).
 - **Variables ya configuradas en Vercel:** `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_SITE_URL`.
-- **Pendientes de configurar cuando estén disponibles** (ver tabla de variables arriba): `AUTH_GOOGLE_ID`/`SECRET`, `MERCADOPAGO_ACCESS_TOKEN`/`NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY`, `UPLOADTHING_TOKEN`, `RESEND_API_KEY`. Mientras falten, el sitio funciona en modo mock/oculto para esas integraciones (ver secciones correspondientes).
+- **Pendientes de configurar cuando estén disponibles** (ver tabla de variables arriba): `AUTH_GOOGLE_ID`/`SECRET`, `UPLOADTHING_TOKEN`, `RESEND_API_KEY`. Mientras falten, el sitio funciona en modo mock/oculto para esas integraciones (ver secciones correspondientes).
 
 ### Recrear el deploy desde cero (referencia)
 

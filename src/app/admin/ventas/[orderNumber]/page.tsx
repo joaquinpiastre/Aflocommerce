@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getOrderByNumber } from "@/lib/data/orders";
 import { formatDateTime, formatPrice } from "@/lib/format";
+import { PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import { AdminOrderStatusSelect } from "./status-select";
 
 export const metadata: Metadata = { title: "Detalle de venta" };
@@ -66,7 +67,7 @@ export default async function AdminOrderDetailPage({
           <span>{formatPrice(order.total)}</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          Método de pago: {order.paymentMethod}
+          Método de pago: {PAYMENT_METHOD_LABEL[order.paymentMethod] ?? order.paymentMethod}
           {order.paymentId && ` · ID de pago: ${order.paymentId}`}
         </p>
       </div>

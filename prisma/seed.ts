@@ -486,7 +486,7 @@ async function main() {
   ];
 
   let orderCounter = 1000;
-  for (const seed of orderSeeds) {
+  for (const [seedIdx, seed] of orderSeeds.entries()) {
     const createdAt = new Date(Date.now() - seed.daysAgo * 24 * 60 * 60 * 1000);
     const items = seed.items.map(({ product, variantIdx, qty }) => {
       const variant = pickVariant(product, variantIdx);
@@ -512,7 +512,7 @@ async function main() {
         orderNumber: `AFLO-${orderCounter}`,
         userId: customer.id,
         status: seed.status,
-        paymentMethod: PaymentMethod.MERCADO_PAGO,
+        paymentMethod: seedIdx % 2 === 0 ? PaymentMethod.TRANSFERENCIA : PaymentMethod.EFECTIVO,
         subtotal,
         shippingCost,
         total,

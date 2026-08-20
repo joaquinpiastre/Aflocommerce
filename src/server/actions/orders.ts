@@ -4,11 +4,10 @@ import { randomBytes } from "crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkoutSchema, type CheckoutInput } from "@/lib/validations/order";
-import { createPaymentPreference, isMercadoPagoEnabled } from "@/lib/mercadopago";
 import { FREE_SHIPPING_THRESHOLD, FLAT_SHIPPING_COST } from "@/lib/constants";
 
 export type CreateOrderResult =
-  | { success: true; orderNumber: string; redirectUrl: string; mock: boolean }
+  | { success: true; orderNumber: string; redirectUrl: string }
   | { success: false; error: string };
 
 function generateOrderNumber() {
@@ -27,7 +26,7 @@ export async function createOrder(input: CheckoutInput): Promise<CreateOrderResu
     return { success: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
 
-  const { items, addressId, newAddress, saveAddress } = parsed.data;
+  const { items, paymentMethod, addressId, newAddress, saveAddress } = parsed.data;
 
   // Resolver dirección de envío
   let shipping: {
@@ -130,7 +129,7 @@ export async function createOrder(input: CheckoutInput): Promise<CreateOrderResu
         orderNumber,
         userId: session.user.id,
         status: "PENDIENTE",
-        paymentMethod: "MERCADO_PAGO",
+        paymentMethod,
         subtotal,
         shippingCost,
         total,
@@ -152,35 +151,11 @@ export async function createOrder(input: CheckoutInput): Promise<CreateOrderResu
     return createdOrder;
   });
 
-  if (!isMercadoPagoEnabled) {
-    // Modo mock/sandbox: no hay credenciales de Mercado Pago configuradas,
-    // se confirma el pago al instante para poder probar el flujo completo.
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { status: "PAGADO", paymentId: `MOCK-${order.orderNumber}` },
-    });
-    return {
-      success: true,
-      orderNumber: order.orderNumber,
-      redirectUrl: `/checkout/confirmacion/${order.orderNumber}`,
-      mock: true,
-    };
-  }
-
-  const preference = await createPaymentPreference({
-    orderNumber: order.orderNumber,
-    items: orderItemsData.map((i) => ({
-      title: `${i.productName} (${i.size} / ${i.colorName})`,
-      quantity: i.quantity,
-      unitPrice: i.unitPrice,
-    })),
-    payerEmail: session.user.email ?? undefined,
-  });
-
+  // El pago se coordina por fuera (efectivo o transferencia) y un admin
+  // marca la orden como "Pagado" desde el panel una vez confirmado.
   return {
     success: true,
     orderNumber: order.orderNumber,
-    redirectUrl: preference?.initPoint ?? `/checkout/confirmacion/${order.orderNumber}`,
-    mock: false,
+    redirectUrl: `/checkout/confirmacion/${order.orderNumber}`,
   };
 }

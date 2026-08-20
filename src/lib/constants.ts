@@ -28,6 +28,12 @@ export const ORDER_STATUS_FLOW = [
   "ENTREGADO",
 ] as const;
 
+export const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  EFECTIVO: "Efectivo",
+  TRANSFERENCIA: "Transferencia bancaria",
+  MERCADO_PAGO: "Mercado Pago",
+};
+
 export const CLOTHING_SIZES = ["S", "M", "L", "XL", "XXL"] as const;
 
 export const DRINKWARE_SIZES = ["350ml", "500ml", "1L"] as const;

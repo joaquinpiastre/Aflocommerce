@@ -5,8 +5,11 @@ export const checkoutItemSchema = z.object({
   quantity: z.number().int().min(1),
 });
 
+export const paymentMethodSchema = z.enum(["EFECTIVO", "TRANSFERENCIA"]);
+
 export const checkoutSchema = z.object({
   items: z.array(checkoutItemSchema).min(1, "El carrito está vacío"),
+  paymentMethod: paymentMethodSchema,
   addressId: z.string().optional(),
   newAddress: z
     .object({

@@ -5,7 +5,7 @@ import { CheckCircle2, Clock } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { getOrderByNumber } from "@/lib/data/orders";
 import { formatPrice } from "@/lib/format";
-import { ORDER_STATUS_LABEL } from "@/lib/constants";
+import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Confirmación de compra" };
@@ -38,6 +38,19 @@ export default async function OrderConfirmationPage({
         Orden <span className="font-medium text-foreground">{order.orderNumber}</span> ·{" "}
         {ORDER_STATUS_LABEL[order.status]}
       </p>
+
+      {!isPaid && (
+        <div className="mt-6 border border-accent/40 bg-card p-4 text-left text-sm text-foreground">
+          <p className="font-medium text-accent">Método de pago: {PAYMENT_METHOD_LABEL[order.paymentMethod]}</p>
+          <p className="mt-1 text-muted-foreground">
+            Nos vamos a contactar para coordinar
+            {order.paymentMethod === "TRANSFERENCIA"
+              ? " los datos de la transferencia."
+              : " el pago en efectivo."}{" "}
+            Tu pedido queda reservado con el stock ya descontado.
+          </p>
+        </div>
+      )}
 
       <div className="mt-8 space-y-3 border border-border bg-card p-6 text-left">
         {order.items.map((item) => (

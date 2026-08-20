@@ -7,7 +7,7 @@ import type { OrderStatus } from "@prisma/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate, formatPrice } from "@/lib/format";
-import { ORDER_STATUS_LABEL } from "@/lib/constants";
+import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import { updateOrderStatus } from "@/server/actions/admin-orders";
 
 type Order = {
@@ -62,7 +62,9 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
                 {order.items.reduce((acc, i) => acc + i.quantity, 0)} und.
               </TableCell>
               <TableCell className="font-medium text-foreground">{formatPrice(order.total)}</TableCell>
-              <TableCell className="text-muted-foreground">{order.paymentMethod}</TableCell>
+              <TableCell className="text-muted-foreground">
+                {PAYMENT_METHOD_LABEL[order.paymentMethod] ?? order.paymentMethod}
+              </TableCell>
               <TableCell>
                 <Select value={order.status} onValueChange={(v) => v && handleStatusChange(order.id, v as OrderStatus)}>
                   <SelectTrigger className="w-40">

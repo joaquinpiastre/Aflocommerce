@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getAdminOrders } from "@/lib/data/admin-orders";
-import { ORDER_STATUS_LABEL } from "@/lib/constants";
+import { ORDER_STATUS_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/constants";
 import { formatDateTime } from "@/lib/format";
 
 function csvEscape(value: string) {
@@ -41,7 +41,7 @@ export async function GET() {
     order.subtotal.toFixed(2),
     order.shippingCost.toFixed(2),
     order.total.toFixed(2),
-    order.paymentMethod,
+    PAYMENT_METHOD_LABEL[order.paymentMethod] ?? order.paymentMethod,
     ORDER_STATUS_LABEL[order.status] ?? order.status,
   ]);
 
