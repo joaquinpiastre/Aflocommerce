@@ -1,0 +1,300 @@
+// Prisma schema — Aflo Ecommerce
+// Ver documentacion: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================================
+// Auth / Usuarios
+// =========================================
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  phone         String?
+  role          Role      @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  orders        Order[]
+  addresses     Address[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+  cart          Cart?
+
+  @@map("users")
+}
+
+// Modelos requeridos por el adaptador de Prisma de Auth.js
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  userId     String
+  label      String? // ej: "Casa", "Trabajo"
+  street     String
+  city       String
+  province   String
+  postalCode String
+  phone      String?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@map("addresses")
+}
+
+// =========================================
+// Catalogo
+// =========================================
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  image       String?
+  parentId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryToSubcategory", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryToSubcategory")
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  description   String
+  material      String?
+  categoryId    String
+  basePrice     Decimal  @db.Decimal(10, 2)
+  salePrice     Decimal? @db.Decimal(10, 2)
+  images        String[]
+  featured      Boolean  @default(false)
+  active        Boolean  @default(true)
+  soldCount     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category      Category         @relation(fields: [categoryId], references: [id])
+  variants      ProductVariant[]
+  orderItems    OrderItem[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  size      String // ej: S, M, L, XL / 500ml, 1L
+  colorName String // ej: "Negro"
+  colorHex  String // ej: "#0A0A0C"
+  sku       String   @unique
+  stock     Int      @default(0)
+  price     Decimal? @db.Decimal(10, 2) // override opcional del precio base
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+
+  @@unique([productId, size, colorName])
+  @@index([productId])
+  @@map("product_variants")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@map("reviews")
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlist_items")
+}
+
+// =========================================
+// Carrito (persistente para usuarios logueados)
+// =========================================
+
+model Cart {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  variantId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, variantId])
+  @@map("cart_items")
+}
+
+// =========================================
+// Ordenes
+// =========================================
+
+enum OrderStatus {
+  PENDIENTE
+  PAGADO
+  EN_PREPARACION
+  ENVIADO
+  ENTREGADO
+  CANCELADO
+}
+
+enum PaymentMethod {
+  MERCADO_PAGO
+  EFECTIVO
+  TRANSFERENCIA
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique
+  userId        String
+  status        OrderStatus   @default(PENDIENTE)
+  paymentMethod PaymentMethod @default(MERCADO_PAGO)
+  paymentId     String? // id de pago de Mercado Pago
+  subtotal      Decimal       @db.Decimal(10, 2)
+  shippingCost  Decimal       @default(0) @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+
+  addressId     String?
+  shippingStreet     String
+  shippingCity       String
+  shippingProvince   String
+  shippingPostalCode String
+  shippingPhone      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User        @relation(fields: [userId], references: [id])
+  address Address?    @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  items   OrderItem[]
+
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  productId  String
+  variantId  String
+  quantity   Int
+  unitPrice  Decimal @db.Decimal(10, 2)
+  subtotal   Decimal @db.Decimal(10, 2)
+
+  // snapshot de la variante al momento de la compra
+  productName String
+  size        String
+  colorName   String
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}

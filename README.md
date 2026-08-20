@@ -1,36 +1,136 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aflo — Ecommerce
 
-## Getting Started
+Ecommerce completo para **Aflo**, marca de indumentaria y accesorios streetwear
+(remeras, buzos, camperas, joggers, gorras, musculosas, termos, vasos y mates).
 
-First, run the development server:
+Construido con Next.js 14+ (App Router), TypeScript, Tailwind CSS + shadcn/ui,
+Prisma + PostgreSQL, Auth.js y Mercado Pago.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Stack
+
+- **Framework:** Next.js (App Router) + TypeScript
+- **Estilos:** Tailwind CSS v4 + shadcn/ui, tema oscuro Aflo (negro / rojo / dorado)
+- **Base de datos:** PostgreSQL + Prisma ORM
+- **Auth:** Auth.js (NextAuth v5) — credenciales (email/contraseña) + Google OAuth
+- **Pagos:** Mercado Pago (Checkout Pro), con modo mock si no hay credenciales
+- **Imágenes:** UploadThing
+- **Validación:** Zod + React Hook Form
+- **Gráficos admin:** Recharts
+
+## Requisitos previos
+
+- Node.js 20+
+- Una base PostgreSQL (local vía Docker, o Neon / Supabase para producción)
+
+## Puesta en marcha (desarrollo local)
+
+1. Instalar dependencias:
+
+   ```bash
+   npm install
+   ```
+
+2. Copiar las variables de entorno y completarlas:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Ver la sección [Variables de entorno](#variables-de-entorno) para el detalle de cada una.
+
+3. **Base de datos local con Docker** (recomendado para desarrollo):
+
+   ```bash
+   docker run -d --name aflo-postgres \
+     -e POSTGRES_USER=aflo \
+     -e POSTGRES_PASSWORD=aflo_dev_password \
+     -e POSTGRES_DB=aflo \
+     -p 5433:5432 postgres:16-alpine
+   ```
+
+   > Se usa el puerto **5433** en el host (en vez de 5432) porque en esta máquina
+   > ya hay un PostgreSQL nativo escuchando en 5432; si tu máquina no tiene
+   > ningún Postgres corriendo, podés usar `-p 5432:5432` y ajustar la URL de abajo.
+
+   Y en `.env`:
+
+   ```
+   DATABASE_URL="postgresql://aflo:aflo_dev_password@localhost:5433/aflo?schema=public"
+   ```
+
+   Para producción, reemplazar por el connection string de [Neon](https://neon.tech) o [Supabase](https://supabase.com).
+
+4. Aplicar el schema y cargar los datos de ejemplo:
+
+   ```bash
+   npm run db:push    # crea las tablas según prisma/schema.prisma
+   npm run db:seed    # carga categorías, ~15 productos con variantes, usuarios y órdenes de ejemplo
+   ```
+
+   (Alternativa con historial de migraciones versionado: `npm run db:migrate`.)
+
+5. Levantar el servidor de desarrollo:
+
+   ```bash
+   npm run dev
+   ```
+
+   Abrir [http://localhost:3000](http://localhost:3000).
+
+### Usuarios de prueba (creados por el seed)
+
+| Rol      | Email             | Contraseña   |
+| -------- | ----------------- | ------------ |
+| Admin    | admin@aflo.com    | Admin123!    |
+| Cliente  | cliente@aflo.com  | Cliente123!  |
+
+## Variables de entorno
+
+Ver [`.env.example`](./.env.example) para el listado completo y comentado. Resumen:
+
+| Variable                              | Requerida | Descripción                                                            |
+| -------------------------------------- | --------- | ----------------------------------------------------------------------- |
+| `DATABASE_URL`                         | Sí        | Connection string de PostgreSQL                                        |
+| `AUTH_SECRET`                          | Sí        | Secreto de Auth.js (`npx auth secret`)                                  |
+| `NEXTAUTH_URL` / `NEXT_PUBLIC_SITE_URL`| Sí        | URL pública del sitio                                                  |
+| `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`| No        | Credenciales OAuth de Google. Si faltan, se oculta el login con Google |
+| `MERCADOPAGO_ACCESS_TOKEN`             | No        | Token privado de Mercado Pago. Si falta, el checkout usa modo mock      |
+| `NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY`   | No        | Public key de Mercado Pago (Checkout Pro)                               |
+| `UPLOADTHING_TOKEN`                    | No        | Token de UploadThing para subir imágenes de productos desde el admin    |
+| `RESEND_API_KEY` / `EMAIL_FROM`        | No        | Envío de emails transaccionales (confirmación de orden)                 |
+
+## Estructura del proyecto
+
+```
+prisma/
+  schema.prisma      # modelos (User, Product, ProductVariant, Order, etc.)
+  seed.ts            # datos de ejemplo
+src/
+  app/               # rutas de Next.js (App Router)
+  components/        # componentes UI (shadcn en components/ui, resto por dominio)
+  lib/                # utilidades, cliente de Prisma, constantes de marca
+  server/             # server actions y lógica de servidor
+public/
+  brand/              # logo e identidad visual de Aflo
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Modelo de datos
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+El catálogo maneja **variantes de producto** (talle + color) con **stock y SKU
+independientes por variante** (`ProductVariant`), no por producto. Todo el
+descuento de stock en las compras se hace contra la variante específica
+comprada, nunca contra el producto en general.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy
 
-## Learn More
+Preparado para [Vercel](https://vercel.com):
 
-To learn more about Next.js, take a look at the following resources:
+1. Crear una base en [Neon](https://neon.tech) o [Supabase](https://supabase.com) y configurar `DATABASE_URL`.
+2. Configurar el resto de las variables de entorno en el proyecto de Vercel (ver tabla arriba).
+3. Correr `npm run db:migrate` (o `db:push`) contra la base de producción y `npm run db:seed` si se quiere precargar datos de ejemplo.
+4. Deploy normal de Vercel (`vercel --prod` o integración con Git).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estado del proyecto
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Este proyecto se construye por fases. Ver el historial de commits / conversación
+para el detalle de qué fase está activa.
