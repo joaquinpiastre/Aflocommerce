@@ -123,14 +123,24 @@ comprada, nunca contra el producto en general.
 
 ## Deploy
 
-Preparado para [Vercel](https://vercel.com):
+Preparado para [Vercel](https://vercel.com). Estado actual del deploy:
 
-1. Crear una base en [Neon](https://neon.tech) o [Supabase](https://supabase.com) y configurar `DATABASE_URL`.
-2. Configurar el resto de las variables de entorno en el proyecto de Vercel (ver tabla arriba).
-3. Correr `npm run db:migrate` (o `db:push`) contra la base de producción y `npm run db:seed` si se quiere precargar datos de ejemplo.
-4. Deploy normal de Vercel (`vercel --prod` o integración con Git).
+- **Repo:** [github.com/joaquinpiastre/Aflocommerce](https://github.com/joaquinpiastre/Aflocommerce) (rama `main`), conectado a Vercel — cada push a `main` dispara un deploy de producción automático.
+- **Producción:** https://aflo-ecommerce.vercel.app
+- **Base de datos:** PostgreSQL en [Railway](https://railway.app) (proyecto `aflo-ecommerce`), con proxy TCP público para que Vercel se conecte. `DATABASE_URL` ya está cargada como variable de entorno en Vercel (Production).
+- **Variables ya configuradas en Vercel:** `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_SITE_URL`.
+- **Pendientes de configurar cuando estén disponibles** (ver tabla de variables arriba): `AUTH_GOOGLE_ID`/`SECRET`, `MERCADOPAGO_ACCESS_TOKEN`/`NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY`, `UPLOADTHING_TOKEN`, `RESEND_API_KEY`. Mientras falten, el sitio funciona en modo mock/oculto para esas integraciones (ver secciones correspondientes).
+
+### Recrear el deploy desde cero (referencia)
+
+1. Crear una base Postgres (Railway, Neon o Supabase) y obtener el `DATABASE_URL` **público** (con Railway: crear un TCP Proxy en el servicio de Postgres, ya que el `DATABASE_URL` interno no es accesible desde Vercel).
+2. `npx vercel link` para crear/enlazar el proyecto de Vercel.
+3. `npx vercel env add DATABASE_URL production --value "..."` (repetir para `AUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_SITE_URL` y el resto de variables necesarias).
+4. `DATABASE_URL="..." npm run db:push && DATABASE_URL="..." npm run db:seed` contra la base de producción.
+5. `npx vercel --prod` para deployar.
 
 ## Estado del proyecto
 
-Este proyecto se construye por fases. Ver el historial de commits / conversación
-para el detalle de qué fase está activa.
+Las 7 fases (setup, auth, tienda, checkout, cuenta, admin, pulido) están
+completas y verificadas de punta a punta en local. El proyecto ya está
+deployado en Vercel + Railway (ver sección Deploy arriba).
