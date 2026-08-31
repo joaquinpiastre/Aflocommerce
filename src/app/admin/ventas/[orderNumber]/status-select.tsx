@@ -24,7 +24,7 @@ export function AdminOrderStatusSelect({ orderId, status }: { orderId: string; s
   return (
     <Select value={status} onValueChange={handleChange}>
       <SelectTrigger className="w-48">
-        <SelectValue />
+        <SelectValue>{(value: string) => ORDER_STATUS_LABEL[value] ?? value}</SelectValue>
       </SelectTrigger>
       <SelectContent>
         {Object.entries(ORDER_STATUS_LABEL).map(([value, label]) => (

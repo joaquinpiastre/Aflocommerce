@@ -68,7 +68,7 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
               <TableCell>
                 <Select value={order.status} onValueChange={(v) => v && handleStatusChange(order.id, v as OrderStatus)}>
                   <SelectTrigger className="w-40">
-                    <SelectValue />
+                    <SelectValue>{(value: string) => ORDER_STATUS_LABEL[value] ?? value}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(ORDER_STATUS_LABEL).map(([value, label]) => (

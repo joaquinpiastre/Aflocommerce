@@ -79,7 +79,12 @@ function CategoryForm({
           onValueChange={(v) => setValue("parentId", v === "none" ? null : v)}
         >
           <SelectTrigger className="w-full">
-            <SelectValue />
+            <SelectValue>
+              {(value: string) => {
+                if (value === "none") return "Ninguna (categoría principal)";
+                return parents.find((p) => p.id === value)?.name ?? "Ninguna (categoría principal)";
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Ninguna (categoría principal)</SelectItem>

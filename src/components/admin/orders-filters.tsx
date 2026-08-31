@@ -29,7 +29,7 @@ export function OrdersFilters() {
         onValueChange={(v) => update("status", v === "all" ? "" : (v ?? ""))}
       >
         <SelectTrigger className="w-48">
-          <SelectValue />
+          <SelectValue>{(value: string) => (value === "all" ? "Todos los estados" : (ORDER_STATUS_LABEL[value] ?? value))}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos los estados</SelectItem>

@@ -126,7 +126,13 @@ export function ProductForm({
             <Label>Categoría</Label>
             <Select value={watch("categoryId")} onValueChange={(v) => v && setValue("categoryId", v)}>
               <SelectTrigger className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {(value: string) => {
+                    const cat = categories.find((c) => c.id === value);
+                    if (!cat) return "Elegí una categoría";
+                    return cat.parentName ? `${cat.parentName} / ${cat.name}` : cat.name;
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (

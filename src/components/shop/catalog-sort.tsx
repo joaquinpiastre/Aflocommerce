@@ -27,7 +27,9 @@ export function CatalogSort() {
   return (
     <Select value={current} onValueChange={handleChange}>
       <SelectTrigger className="w-52">
-        <SelectValue />
+        <SelectValue>
+          {(value: string) => SORT_OPTIONS.find((o) => o.value === value)?.label ?? value}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {SORT_OPTIONS.map((opt) => (
