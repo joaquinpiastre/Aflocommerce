@@ -76,13 +76,33 @@ export function ProductForm({
       toast.error(result.error);
       return;
     }
-    toast.success(productId ? "Producto actualizado" : "Producto creado");
+    if (result.warning) {
+      toast.warning(result.warning, { duration: 10000 });
+    } else {
+      toast.success(productId ? "Producto actualizado" : "Producto creado");
+    }
     router.push("/admin/productos");
     router.refresh();
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    <form
+      onSubmit={handleSubmit(onSubmit, (errs) => {
+        // Si la validación de un campo falla, avisamos en vez de fallar en silencio.
+        function firstMessage(obj: unknown): string | undefined {
+          if (!obj || typeof obj !== "object") return undefined;
+          const o = obj as Record<string, unknown>;
+          if (typeof o.message === "string") return o.message;
+          for (const v of Object.values(o)) {
+            const msg = firstMessage(v);
+            if (msg) return msg;
+          }
+          return undefined;
+        }
+        toast.error(firstMessage(errs) ?? "Revisá los datos del formulario.");
+      })}
+      className="space-y-8"
+    >
       <Card className="border-border bg-card">
         <CardContent className="grid gap-4 pt-6 sm:grid-cols-2">
           <div className="space-y-1.5 sm:col-span-2">
@@ -131,7 +151,7 @@ export function ProductForm({
               type="number"
               step="0.01"
               {...register("salePrice", {
-                setValueAs: (v) => (v === "" ? null : Number(v)),
+                setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
               })}
             />
           </div>
@@ -239,7 +259,7 @@ export function ProductForm({
                       type="number"
                       step="0.01"
                       {...register(`variants.${idx}.price`, {
-                        setValueAs: (v) => (v === "" ? null : Number(v)),
+                        setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
                       })}
                     />
                   </div>

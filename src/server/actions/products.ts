@@ -5,7 +5,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { productSchema, type ProductFormInput } from "@/lib/validations/product";
 
-type ActionResult = { success: true; id?: string } | { success: false; error: string };
+type ActionResult =
+  | { success: true; id?: string; warning?: string }
+  | { success: false; error: string };
 
 async function requireAdmin() {
   const session = await auth();
@@ -95,6 +97,23 @@ export async function updateProduct(id: string, input: ProductFormInput): Promis
   const incomingIds = new Set(data.variants.filter((v) => v.id).map((v) => v.id));
   const toDelete = existing.variants.filter((v) => !incomingIds.has(v.id));
 
+  // Una variante con ventas asociadas no se puede borrar (la FK de OrderItem
+  // lo impide). En vez de abortar todo el guardado, la dejamos como está y
+  // avisamos, para que el resto de los cambios (producto + otras variantes)
+  // se guarde igual.
+  let blockedVariants: typeof toDelete = [];
+  if (toDelete.length > 0) {
+    const referenced = await prisma.orderItem.findMany({
+      where: { variantId: { in: toDelete.map((v) => v.id) } },
+      select: { variantId: true },
+      distinct: ["variantId"],
+    });
+    const referencedIds = new Set(referenced.map((r) => r.variantId));
+    blockedVariants = toDelete.filter((v) => referencedIds.has(v.id));
+  }
+  const blockedIds = new Set(blockedVariants.map((v) => v.id));
+  const deletableVariants = toDelete.filter((v) => !blockedIds.has(v.id));
+
   try {
     await prisma.$transaction(async (tx) => {
       await tx.product.update({
@@ -113,7 +132,7 @@ export async function updateProduct(id: string, input: ProductFormInput): Promis
         },
       });
 
-      for (const del of toDelete) {
+      for (const del of deletableVariants) {
         await tx.productVariant.delete({ where: { id: del.id } });
       }
 
@@ -148,8 +167,7 @@ export async function updateProduct(id: string, input: ProductFormInput): Promis
   } catch {
     return {
       success: false,
-      error:
-        "No se pudo guardar. Alguna variante eliminada podría tener ventas asociadas; en ese caso, desactivá el producto en lugar de borrar la variante.",
+      error: "No se pudo guardar el producto. Probá de nuevo en unos segundos.",
     };
   }
 
@@ -157,7 +175,15 @@ export async function updateProduct(id: string, input: ProductFormInput): Promis
   revalidatePath(`/admin/productos/${id}`);
   revalidatePath("/catalogo");
   revalidatePath(`/productos/${slug}`);
-  return { success: true, id };
+
+  const warning =
+    blockedVariants.length > 0
+      ? `Se guardaron los cambios, pero ${blockedVariants.length === 1 ? "esta variante no se pudo eliminar porque tiene" : "estas variantes no se pudieron eliminar porque tienen"} ventas asociadas y quedaron sin cambios: ${blockedVariants
+          .map((v) => `${v.size} / ${v.colorName}`)
+          .join(", ")}. Desactivá el producto si no querés que se sigan vendiendo.`
+      : undefined;
+
+  return { success: true, id, warning };
 }
 
 export async function deleteProduct(id: string): Promise<ActionResult> {
