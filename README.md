@@ -13,7 +13,7 @@ y Prisma + PostgreSQL.
 - **Base de datos:** PostgreSQL + Prisma ORM
 - **Auth:** Auth.js (NextAuth v5) — credenciales (email/contraseña) + Google OAuth
 - **Pagos:** manuales (efectivo o transferencia) — la orden queda "Pendiente" y un admin la marca como "Pagado" desde el panel una vez confirmado el pago por fuera de la web
-- **Imágenes:** UploadThing
+- **Imágenes:** Vercel Blob (categorías, con subida real de archivos) + UploadThing (productos, pendiente de conectar)
 - **Validación:** Zod + React Hook Form
 - **Gráficos admin:** Recharts
 
@@ -94,7 +94,8 @@ Ver [`.env.example`](./.env.example) para el listado completo y comentado. Resum
 | `AUTH_SECRET`                          | Sí        | Secreto de Auth.js (`npx auth secret`)                                  |
 | `NEXTAUTH_URL` / `NEXT_PUBLIC_SITE_URL`| Sí        | URL pública del sitio                                                  |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`| No        | Credenciales OAuth de Google. Si faltan, se oculta el login con Google |
-| `UPLOADTHING_TOKEN`                    | No        | Token de UploadThing para subir imágenes de productos desde el admin    |
+| `BLOB_READ_WRITE_TOKEN`                | Sí (ya configurada en Vercel) | Vercel Blob, para subir imágenes de categorías desde el admin |
+| `UPLOADTHING_TOKEN`                    | No        | Token de UploadThing para subir imágenes de productos desde el admin (todavía usa URL)    |
 | `RESEND_API_KEY` / `EMAIL_FROM`        | No        | Envío de emails transaccionales (confirmación de orden)                 |
 
 ## Estructura del proyecto
@@ -127,6 +128,7 @@ Preparado para [Vercel](https://vercel.com). Estado actual del deploy:
 - **Producción:** https://aflo-ecommerce.vercel.app
 - **Base de datos:** PostgreSQL en [Railway](https://railway.app) (proyecto `aflo-ecommerce`), con proxy TCP público para que Vercel se conecte. `DATABASE_URL` ya está cargada como variable de entorno en Vercel (Production).
 - **Variables ya configuradas en Vercel:** `DATABASE_URL`, `AUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_SITE_URL`.
+- **Vercel Blob:** store `aflo-images` creado y enlazado al proyecto (`BLOB_READ_WRITE_TOKEN` ya configurado en los 3 entornos de Vercel) — usado para la subida real de imágenes de categorías.
 - **Pendientes de configurar cuando estén disponibles** (ver tabla de variables arriba): `AUTH_GOOGLE_ID`/`SECRET`, `UPLOADTHING_TOKEN`, `RESEND_API_KEY`. Mientras falten, el sitio funciona en modo mock/oculto para esas integraciones (ver secciones correspondientes).
 
 ### Recrear el deploy desde cero (referencia)

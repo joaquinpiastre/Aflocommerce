@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ImageUploader } from "@/components/admin/image-uploader";
 
 type Category = {
   id: string;
@@ -68,10 +70,12 @@ function CategoryForm({
         <Label>Descripción</Label>
         <Textarea rows={2} {...register("description")} />
       </div>
-      <div className="space-y-1.5">
-        <Label>Imagen (URL, opcional)</Label>
-        <Input {...register("image")} />
-      </div>
+      <ImageUploader
+        label="Imagen (opcional)"
+        value={watch("image") ?? ""}
+        onChange={(url) => setValue("image", url)}
+        folder="categorias"
+      />
       <div className="space-y-1.5">
         <Label>Categoría padre (opcional)</Label>
         <Select
@@ -163,7 +167,12 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
         {topLevel.map((cat) => (
           <div key={cat.id} className="border border-border bg-card p-4">
             <div className="flex items-center justify-between">
-              <p className="font-display uppercase text-foreground">{cat.name}</p>
+              <div className="flex items-center gap-3">
+                <div className="relative size-10 shrink-0 overflow-hidden border border-border bg-secondary">
+                  {cat.image && <Image src={cat.image} alt={cat.name} fill className="object-cover" />}
+                </div>
+                <p className="font-display uppercase text-foreground">{cat.name}</p>
+              </div>
               <div className="flex gap-2">
                 <button onClick={() => setEditing(cat)} className="text-muted-foreground hover:text-accent">
                   <Pencil className="size-4" />
@@ -177,7 +186,14 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
               <div className="mt-2 space-y-1 pl-4">
                 {childrenOf(cat.id).map((child) => (
                   <div key={child.id} className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{child.name}</span>
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <span className="relative size-6 shrink-0 overflow-hidden border border-border bg-secondary">
+                        {child.image && (
+                          <Image src={child.image} alt={child.name} fill className="object-cover" />
+                        )}
+                      </span>
+                      {child.name}
+                    </span>
                     <div className="flex gap-2">
                       <button onClick={() => setEditing(child)} className="text-muted-foreground hover:text-accent">
                         <Pencil className="size-3.5" />
